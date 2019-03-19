@@ -4,6 +4,9 @@ var fs = require('fs');
 const cron = require("node-cron");
 const util = require('util')
 
+var mongo = require('mongodb').MongoClient
+
+
 const cookiesFilePath = "./cookies.json"
 
 const saveCookies = async (page) => {
@@ -61,6 +64,30 @@ const login = async (page) => {
     }
 }
 
+function startMongo()
+{
+    const url = 'mongodb://root:root123@ds117846.mlab.com:17846/ibov'
+    
+    return mongo.connect(url, (err, client) => {
+        if (err) {
+          console.error(err)
+          return
+        }
+        
+        console.log('Mongodb started')
+
+        return client
+      })
+}
+
+const writeInDB = async function(data)
+{
+    fs.appendFile('./data.json', JSON.stringify(data), function (err) {
+        if (err) throw err;
+        console.log('Saved!');
+    })
+}
+
 function getCurrentDay() {
     var dateObj = new Date();
     var month = dateObj.getUTCMonth() + 1; //months from 1-12
@@ -88,8 +115,14 @@ const getData = async function (page) {
             let minute = hour.split(":")
             minute = minute[0] + ":" + minute[1]
 
-            
-            data[minute] = minute in data ? data[minute] : [] 
+            if (minute in data){
+                true
+            }
+            else{
+                writeInDB(data)
+                data = {}
+                data[minute] = []
+            }
 
             let ibovPrice = await page.$eval('div[symbol-short=IBOV]', el => el.innerText)
             ibovPrice = ibovPrice.split("\n")
@@ -112,9 +145,9 @@ const getData = async function (page) {
             }
 
             data[minute].push(dataObject)
-            console.log(minute + ": " + data[minute].length);
+            console.log(dataObject)
         },
-        1000
+        5000
     )
 
 }
