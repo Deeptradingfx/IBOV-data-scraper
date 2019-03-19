@@ -2,6 +2,7 @@ const puppeteer = require('puppeteer');
 const jsonfile = require('jsonfile');
 var fs = require('fs');
 const cron = require("node-cron");
+const util = require('util')
 
 const cookiesFilePath = "./cookies.json"
 
@@ -60,18 +61,13 @@ const login = async (page) => {
     }
 }
 
-function getCurrentTime() {
-    var date = new Date();
+function getCurrentDay() {
+    var dateObj = new Date();
+    var month = dateObj.getUTCMonth() + 1; //months from 1-12
+    var day = dateObj.getUTCDate();
+    var year = dateObj.getUTCFullYear();
 
-    var hour = date.getHours();
-    hour = (hour < 10 ? "0" : "") + hour;
-
-    var min = date.getMinutes();
-    min = (min < 10 ? "0" : "") + min;
-
-    var sec = date.getSeconds();
-    sec = (sec < 10 ? "0" : "") + sec;
-    console.log(hour, min, sec)
+    return year + "-" + month + "-" + day
 }
 
 
@@ -81,13 +77,42 @@ const getData = async function (page) {
         clearIntervalAsync
     } = require('set-interval-async/dynamic')
 
+    const today = getCurrentDay()
+    
+    let data = {}
+
     setIntervalAsync(
         async () => {
-            
             const hour = await page.$eval('.inner-2FptJsfC-', el => el.innerText)
-            const price = await page.$eval('.dl-header-price', el => el.innerText)
-            console.log(`Hour: ${hour} - Price: ${price}`)
+            
+            let minute = hour.split(":")
+            minute = minute[0] + ":" + minute[1]
 
+            
+            data[minute] = minute in data ? data[minute] : [] 
+
+            let ibovPrice = await page.$eval('div[symbol-short=IBOV]', el => el.innerText)
+            ibovPrice = ibovPrice.split("\n")
+            ibovPrice = ibovPrice[1]
+
+            let miniIbovPrice = await page.$eval('div[symbol-short=WINJ2019]', el => el.innerText)
+            miniIbovPrice = miniIbovPrice.split("\n")
+            miniIbovPrice = miniIbovPrice[1]
+
+            let dolPrice = await page.$eval('div[symbol-short=DOLJ2019]', el => el.innerText)
+            dolPrice = dolPrice.split("\n")
+            dolPrice = dolPrice[1]
+            
+            let dataObject = {
+                "time" : hour,
+                "ibov" : ibovPrice,
+                "mini-index": miniIbovPrice,
+                "dol":dolPrice
+                
+            }
+
+            data[minute].push(dataObject)
+            console.log(minute + ": " + data[minute].length);
         },
         1000
     )
