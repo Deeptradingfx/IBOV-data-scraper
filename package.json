@@ -1,0 +1,27 @@
+{
+  "name": "ibov-data-scraper",
+  "version": "1.0.0",
+  "description": "Collect data from ibovespa",
+  "main": "main.js",
+  "dependencies": {
+    "jsonfile": "^5.0.0",
+    "mongodb": "^3.1.13",
+    "node-cron": "^2.0.3",
+    "puppeteer": "^1.13.0",
+    "set-interval-async": "^1.0.23"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xlucasdemelo/IBOV-data-scraper.git"
+  },
+  "author": "Lucas Aguiar",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/xlucasdemelo/IBOV-data-scraper/issues"
+  },
+  "homepage": "https://github.com/xlucasdemelo/IBOV-data-scraper#readme"
+}
