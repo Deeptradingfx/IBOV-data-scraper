@@ -1,6 +1,10 @@
 # IBOV-data-scraper
 Data scraper for IBOVESPA data
 
+### Architecture
+
+![alt text](https://raw.githubusercontent.com/xlucasdemelo/IBOV-data-scraper/master/architecture.png)
+
 ### Setting up timescale-db
 
 1. Run it via docker
