@@ -82,7 +82,9 @@ function startMongo()
 
 const writeInDB = async function(data)
 {
-    fs.appendFile('./data.json', JSON.stringify(data), function (err) {
+    let today = getCurrentDay()
+	
+    fs.appendFile('./' + today, JSON.stringify(data), function (err) {
         if (err) throw err;
         console.log('Saved!');
     })
