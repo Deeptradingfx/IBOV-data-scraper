@@ -84,7 +84,7 @@ const writeInDB = async function(data)
 {
     let today = getCurrentDay()
 	
-    fs.appendFile('./' + today, JSON.stringify(data), function (err) {
+    fs.appendFile(`./${today}.json`, JSON.stringify(data), function (err) {
         if (err) throw err;
         console.log('Saved!');
     })
