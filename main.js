@@ -1,45 +1,9 @@
 const puppeteer = require('puppeteer');
 const jsonfile = require('jsonfile');
 var fs = require('fs');
-const cron = require("node-cron");
 const util = require('util')
+const chromium = require('chrome-aws-lambda');
 
-var mongo = require('mongodb').MongoClient
-
-
-const cookiesFilePath = "./cookies.json"
-
-const saveCookies = async (page) => {
-
-    // Save Session Cookies
-    const cookiesObject = await page.cookies()
-
-    // Write cookies to temp file to be used in other profile pages
-    jsonfile.writeFile(cookiesFilePath, cookiesObject, { spaces: 2 },
-
-        function (err) {
-            if (err) {
-                console.log('The file could not be written.', err)
-            }
-
-            console.log('Session has been successfully saved')
-        })
-
-}
-
-const openSession = async (page) => {
-
-    // If file exist load the cookies
-    const cookiesArr = require(`${cookiesFilePath}`)
-    if (cookiesArr.length !== 0) {
-        for (let cookie of cookiesArr) {
-            await page.setCookie(cookie)
-        }
-        console.log('Session has been loaded in the browser')
-        return true
-    }
-
-}
 
 const login = async (page) => {
 
@@ -157,7 +121,13 @@ const getData = async function (page) {
 // Start function
 const start = async function () {
 
-    const browser = await puppeteer.launch({ args: ['--no-sandbox', '--disable-setuid-sandbox'], userDataDir: "./user_data" });
+    const browser = await puppeteer.launch({ 
+        args: ['--no-sandbox', '--disable-setuid-sandbox', 'chromium.args'],
+        userDataDir: "./user_data",
+        defaultViewport: chromium.defaultViewport,
+        executablePath: await chromium.executablePath,
+        headless: chromium.headless,
+    });
 
     const page = await browser.newPage()
 
