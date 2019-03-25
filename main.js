@@ -64,26 +64,24 @@ const login = async (page) => {
     }
 }
 
-function startMongo()
-{
+function startMongo() {
     const url = 'mongodb://root:root123@ds117846.mlab.com:17846/ibov'
-    
+
     return mongo.connect(url, (err, client) => {
         if (err) {
-          console.error(err)
-          return
+            console.error(err)
+            return
         }
-        
+
         console.log('Mongodb started')
 
         return client
-      })
+    })
 }
 
-const writeInDB = async function(data)
-{
+const writeInDB = async function (data) {
     let today = getCurrentDay()
-	
+
     fs.appendFile(`./${today}.json`, JSON.stringify(data), function (err) {
         if (err) throw err;
         console.log('Saved!');
@@ -99,7 +97,6 @@ function getCurrentDay() {
     return year + "-" + month + "-" + day
 }
 
-
 const getData = async function (page) {
     const {
         setIntervalAsync,
@@ -107,20 +104,20 @@ const getData = async function (page) {
     } = require('set-interval-async/dynamic')
 
     const today = getCurrentDay()
-    
+
     let data = {}
 
     setIntervalAsync(
         async () => {
             const hour = await page.$eval('.inner-2FptJsfC-', el => el.innerText)
-            
+
             let minute = hour.split(":")
             minute = minute[0] + ":" + minute[1]
 
-            if (minute in data){
+            if (minute in data) {
                 true
             }
-            else{
+            else {
                 writeInDB(data)
                 data = {}
                 data[minute] = []
@@ -137,13 +134,13 @@ const getData = async function (page) {
             let dolPrice = await page.$eval('div[symbol-short=DOLJ2019]', el => el.innerText)
             dolPrice = dolPrice.split("\n")
             dolPrice = dolPrice[1]
-            
+
             let dataObject = {
-                "time" : hour,
-                "ibov" : ibovPrice,
+                "time": hour,
+                "ibov": ibovPrice,
                 "mini-index": miniIbovPrice,
-                "dol":dolPrice
-                
+                "dol": dolPrice
+
             }
 
             data[minute].push(dataObject)
@@ -157,7 +154,14 @@ const getData = async function (page) {
 // Start function
 const start = async function () {
 
-    const browser = await puppeteer.launch({ args: ['--no-sandbox', '--disable-setuid-sandbox'], userDataDir: "./user_data" });
+    const browser = await puppeteer.launch(
+        { headless: false },
+        {
+            args: ['--no-sandbox', '--disable-setuid-sandbox'],
+            userDataDir: "./user_data"
+        }
+
+    );
 
     const page = await browser.newPage()
 
@@ -166,6 +170,7 @@ const start = async function () {
     try {
         await login(page);
     } catch (error) {
+
     }
 
 
