@@ -2,6 +2,7 @@ const puppeteer = require('puppeteer');
 const jsonfile = require('jsonfile');
 var fs = require('fs');
 const cron = require("node-cron");
+const csv = require('csv-writer');
 const util = require('util')
 
 
@@ -12,6 +13,7 @@ const login = async (page) => {
 
   const username = process.env.TRADING_VIEW_USERNAME
   const password = process.env.TRADING_VIEW_PASSWORD
+
 
   await page.type('[type=text]', username);
   await page.type('[type=password]', password);
@@ -28,13 +30,34 @@ const login = async (page) => {
   }
 }
 
-const writeInDB = async function (data, name) {
+const writeInDB = async function (data, name, ativo) {
   let today = getCurrentDay()
+  const csvWriter = require('csv-write-stream');
 
-  fs.appendFile(`./${name}.json`, JSON.stringify(data), function (err) {
-    if (err) throw err;
-    console.log('Saved!');
-  })
+  const path = `./${ativo}/${name}.csv`
+
+  let writer = csvWriter()
+
+  if (!fs.existsSync(path))
+    writer = csvWriter({
+      headers: ['Ativo', 'Time', 'Open', 'Max', 'Min', 'Close']
+    });
+  else
+    writer = csvWriter({ sendHeaders: false });
+
+  console.log(data)
+
+  writer.pipe(fs.createWriteStream(path, { flags: 'a' }));
+  writer.write({
+    Ativo:data.ativo,
+    Time:data.time,
+    Open:data.open,
+    Max:data.max,
+    Min:data.min,
+    Close:data.close
+  });
+  writer.end();
+
 }
 
 function getCurrentDay() {
@@ -45,50 +68,6 @@ function getCurrentDay() {
 
   return year + "-" + month + "-" + day
 }
-
-const watchData = async function (page) {
-  try {
-
-    console.log("Waiting...")
-    await page.waitFor(1000);
-
-    await page.waitForFunction(
-      'document.querySelector(".js-data-mode").textContent == "Replay Mode"',
-      {
-        "timeout":900000
-      }
-    );
-
-    console.log("exposing")
-    page.exposeFunction('puppeteerMutationListener', puppeteerMutationListener);
-
-    await page.evaluate(() => {
-      // const target = document.querySelectorAll(".pane-legend-item-value")[0];
-      const target = document.querySelector(".inner-2FptJsfC-");
-      console.log(target)
-      const observer = new MutationObserver((mutationsList) => {
-        for (const mutation of mutationsList) {
-          window.puppeteerMutationListener(
-            mutation,
-            mutation,
-          );
-        }
-      });
-
-      observer.observe(
-        target,
-        { childList: true },
-      );
-    });
-  } catch (err) {
-    console.error(err);
-  }
-
-  function puppeteerMutationListener(oldValue, newValue) {
-    console.log(`${oldValue} -> ${newValue}`);
-  }
-
-};
 
 
 const getData = async function (page, ativo) {
@@ -109,33 +88,29 @@ const getData = async function (page, ativo) {
   setIntervalAsync(
     async () => {
 
-      const day = await page.$$eval('.pane-legend-item-value', (el) => el[0].innerHTML )
-      const month = await page.$$eval('.pane-legend-item-value', (el) => el[1].innerHTML )
-      const hour = await page.$$eval('.pane-legend-item-value', (el) => el[2].innerHTML )
-      const minute = await page.$$eval('.pane-legend-item-value', (el) => el[3].innerHTML )
-      const value = await page.$$eval('.pane-legend-item-value', (el) => el[4].innerHTML )
+      const day = await page.$$eval('.pane-legend-item-value', (el) => el[0].innerHTML)
+      const month = await page.$$eval('.pane-legend-item-value', (el) => el[1].innerHTML)
+      const hour = await page.$$eval('.pane-legend-item-value', (el) => el[2].innerHTML)
+      const minute = await page.$$eval('.pane-legend-item-value', (el) => el[3].innerHTML)
 
       hourMinute = Math.floor(hour) + ":" + Math.floor(minute)
       dayMonth = Math.floor(day) + "-" + Math.floor(month)
 
-      if (hourMinute in data) {
-        true
-      }
-      else {
-        writeInDB(data, dayMonth)
-        data = {}
-        data[hourMinute] = []
-      }
+      let openValue = await page.$$eval('.pane-legend-item-value__main', (el) => el[0].innerHTML)
+      let maxValue = await page.$$eval('.pane-legend-item-value__main', (el) => el[1].innerHTML)
+      let minValue = await page.$$eval('.pane-legend-item-value__main', (el) => el[2].innerHTML)
+      let closeValue = await page.$$eval('.pane-legend-item-value__main', (el) => el[3].innerHTML)
 
-      console.log(ativo)
       let dataObject = {
         "time": hourMinute,
-        [ativo]: value,
+        "ativo": ativo,
+        "open": openValue,
+        "max": maxValue,
+        "min": minValue,
+        "close": closeValue
       }
 
-
-      data[hourMinute].push(dataObject)
-      console.log(dataObject)
+      writeInDB(dataObject, dayMonth, ativo)
     },
     1000
   )
@@ -181,7 +156,7 @@ const start = async function () {
   const name = await page.$eval('.dl-header-price', el => el.innerText)
   console.log(name)
 
-  getData(page, "dol")
+  getData(page, "ibov")
 }
 
 start()
