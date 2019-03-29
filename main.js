@@ -1,45 +1,9 @@
 const puppeteer = require('puppeteer');
 const jsonfile = require('jsonfile');
 var fs = require('fs');
-const cron = require("node-cron");
-const util = require('util')
-
-var mongo = require('mongodb').MongoClient
-
 
 const cookiesFilePath = "./cookies.json"
 
-const saveCookies = async (page) => {
-
-    // Save Session Cookies
-    const cookiesObject = await page.cookies()
-
-    // Write cookies to temp file to be used in other profile pages
-    jsonfile.writeFile(cookiesFilePath, cookiesObject, { spaces: 2 },
-
-        function (err) {
-            if (err) {
-                console.log('The file could not be written.', err)
-            }
-
-            console.log('Session has been successfully saved')
-        })
-
-}
-
-const openSession = async (page) => {
-
-    // If file exist load the cookies
-    const cookiesArr = require(`${cookiesFilePath}`)
-    if (cookiesArr.length !== 0) {
-        for (let cookie of cookiesArr) {
-            await page.setCookie(cookie)
-        }
-        console.log('Session has been loaded in the browser')
-        return true
-    }
-
-}
 
 const login = async (page) => {
 
@@ -64,21 +28,6 @@ const login = async (page) => {
     }
 }
 
-function startMongo() {
-    const url = 'mongodb://root:root123@ds117846.mlab.com:17846/ibov'
-
-    return mongo.connect(url, (err, client) => {
-        if (err) {
-            console.error(err)
-            return
-        }
-
-        console.log('Mongodb started')
-
-        return client
-    })
-}
-
 const writeInDB = async function (data) {
     let today = getCurrentDay()
 
@@ -86,6 +35,32 @@ const writeInDB = async function (data) {
         if (err) throw err;
         console.log('Saved!');
     })
+
+    // today = getCurrentDay()
+    // const csvWriter = require('csv-write-stream');
+  
+    // const path = `./${today}.csv`
+  
+    // let writer = csvWriter()
+  
+    // if (!fs.existsSync(path))
+    //   writer = csvWriter({
+    //     headers: ['Time', 'Mini_index', 'Dol', 'IBOV']
+    //   });
+    // else
+    //   writer = csvWriter({ sendHeaders: false });
+  
+    // console.log(data)
+      
+    // writer.pipe(fs.createWriteStream(path, { flags: 'a' }));
+    // writer.write({
+    //   Time:data.time,
+    //   Mini_index:data.mini-index,
+    //   Dol:data.dol,
+    //   IBOV:data.ibov
+    // });
+    // writer.end();
+
 }
 
 function getCurrentDay() {
@@ -155,7 +130,7 @@ const getData = async function (page) {
 const start = async function () {
 
     const browser = await puppeteer.launch(
-        { headless: false },
+        { headless: true },
         {
             args: ['--no-sandbox', '--disable-setuid-sandbox'],
             userDataDir: "./user_data"
