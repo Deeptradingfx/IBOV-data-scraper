@@ -129,8 +129,11 @@ const getData = async function (page) {
 // Start function
 const start = async function () {
 
+    let headless = true
+    headless = process.argv[2] == "false" ? false : headless
+
     const browser = await puppeteer.launch(
-        { headless: true },
+        { headless: headless },
         {
             args: ['--no-sandbox', '--disable-setuid-sandbox'],
             userDataDir: "./user_data"
